@@ -20,8 +20,8 @@ foreach ( $sub in $subs )
     Select-AzureRmSubscription -SubscriptionName $sub.Name
     
     $SubRGs = Get-AzureRmResourceGroup |  
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($sub).Name} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($sub).Id} -PassThru | 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $sub.Name -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $sub.Id -PassThru | 
         Out-GridView -OutputMode Multiple -Title "Select Resource Groups"
 
     foreach ( $SubRG in $SubRGs )
@@ -61,47 +61,47 @@ foreach ( $RG in $RGs )
  
     $VMs += $RG | 
         Get-AzureRmVM |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
     
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     $Disks += $RG |
         Get-AzureRmDisk |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
          
     $Vnets +=  $RG | 
         Get-AzureRmVirtualNetwork |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     $NetworkInterfaces +=  $RG |
         Get-AzureRmNetworkInterface |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     $NSGs += $RG |
         Get-AzureRmNetworkSecurityGroup         |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru  |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     $AutoAccounts += $RG | 
         Get-AzureRmAutomationAccount |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru  # |
-        # Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru  
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
+        #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
         
     $LogAnalystics += $RG |
         Get-AzureRmOperationalInsightsWorkspace |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
-        Add-Member -MemberType ScriptProperty –Name Subscription –Value {($RG).Subscription} -PassThru |
-        Add-Member -MemberType ScriptProperty –Name SubscriptionId –Value {($RG).SubscriptionID} -PassThru 
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
 }
 
@@ -110,7 +110,7 @@ foreach ( $RG in $RGs )
 
 #region Filter and Sort Gathered Info
 
-$FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,Location
+$FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location
 
 $VMs = $VMs | 
     Add-Member -MemberType ScriptProperty –Name Size –Value {($this.HardwareProfile.Vmsize)} -PassThru | 

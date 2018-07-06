@@ -1,3 +1,3 @@
 "Subscription","SubscriptionId","ResourceGroupName","Location","ProvisioningState","Tags","TagsTable","ResourceId"
-"slgmag_Sandbox_DevTeamA","d440b002-a3b9-43e1-9170-a6f3ba2c62c2","VA-AGILEDEVOPS-EAST-RG","usgovvirginia","Succeeded",,,"/subscriptions/d440b002-a3b9-43e1-9170-a6f3ba2c62c2/resourceGroups/VA-AGILEDEVOPS-EAST-RG"
-"slgmag_Sandbox_DevTeamA","d440b002-a3b9-43e1-9170-a6f3ba2c62c2","VA-AGILEDEVOPS-RAFFE-RG","usgovarizona","Succeeded",,,"/subscriptions/d440b002-a3b9-43e1-9170-a6f3ba2c62c2/resourceGroups/VA-AGILEDEVOPS-RAFFE-RG"
+"Azure Government Internal","ed347077-d367-4401-af11-a87b73bbae0e","F5-RG","usgovvirginia","Succeeded",,,"/subscriptions/dd1f0073-4e57-4d48-b9ce-0a9ec4782de8/resourceGroups/F5-RG"
+"Azure Government Internal","ed347077-d367-4401-af11-a87b73bbae0e","Prod-RG","usgovvirginia","Succeeded",,,"/subscriptions/ed347077-d367-4401-af11-a87b73bbae0e/resourceGroups/Prod-RG"
