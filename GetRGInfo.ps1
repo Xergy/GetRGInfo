@@ -51,6 +51,7 @@ $NSGs = @()
 $AutoAccounts = @()
 $LogAnalystics = @()
 $KeyVaults = @()
+$RecoveryServicesVaults = @()
 
 foreach ( $RG in $RGs )
 {
@@ -101,7 +102,18 @@ foreach ( $RG in $RGs )
 
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
-        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
+    
+    $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
+        #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru  
+
+#    $BackupItemSummaries += 
+
+    $FailedBackupJob += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
+        #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru  
+
 
 }
 
@@ -149,6 +161,10 @@ $KeyVaults = $KeyVaults |
     Select-Object -Property VaultName,Subscription,ResourceGroupName,Location |
     Sort-Object Subscription,ResourceGroupName,VaultName
 
+$RecoveryServicesVaults = $RecoveryServicesVaults |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location |
+    Sort-Object Subscription,ResourceGroupName,Name
+
 #endregion
 
 
@@ -170,7 +186,7 @@ $NSGs  | Export-Csv -Path "$($mdStr)\NSGs.csv" -NoTypeInformation
 $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
 $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformation
 $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
-
+$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
 #endregion
 
 
@@ -238,6 +254,7 @@ $HTMLMiddle += GenericTable $NetworkInterfaces "Network Interfaces" "Detailed Ne
 $HTMLMiddle += GenericTable $AutoAccounts  "Automation Accounts" "Detailed Automation Account Info"
 $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalystics Info"
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
+$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
