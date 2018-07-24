@@ -1,4 +1,5 @@
-﻿Write-Host "Please run this script region by region manually in the ISE!"
+﻿<#
+Write-Host "Please run this script region by region manually in the ISE!"
 #Move to the location of the script if you not threre already.
 $ScriptDir = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition) 
 Set-Location $ScriptDir
@@ -8,6 +9,7 @@ if ((Get-AzureRmContext).Account -eq $Null) {
 Login-AzureRmAccount -Environment AzureUSGovernment}
 
 break
+#>
 
 #region Build Config File
 
@@ -52,6 +54,7 @@ $AutoAccounts = @()
 $LogAnalystics = @()
 $KeyVaults = @()
 $RecoveryServicesVaults = @()
+$BackupItemSummary = @()
 
 foreach ( $RG in $RGs )
 {
@@ -103,16 +106,35 @@ foreach ( $RG in $RGs )
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
-    
+
     $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
-        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
-        #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru  
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru | 
+        ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name BackupStorageRedundancy –Value ((Get-AzureRmRecoveryServicesBackupProperty -Vault $_ ).BackupStorageRedundancy) -PassThru }    
 
-#    $BackupItemSummaries += 
+    #BackupItems Summary
 
-    $FailedBackupJob += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
-        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
-        #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru  
+        foreach ($recoveryservicesvault in $recoveryservicesvaults) {
+            #write-host $recoveryservicesvault.name
+            Get-AzureRmRecoveryServicesVault -Name $recoveryservicesvault.Name | Set-AzureRmRecoveryServicesVaultContext   
+
+            $containers = Get-AzureRmRecoveryServicesBackupContainer -ContainerType azurevm
+
+
+            foreach ($container in $containers) {
+                #write-host $container.name
+
+                $BackupItem = Get-AzureRmRecoveryServicesBackupItem -Container $container -WorkloadType "AzureVM"
+
+                $BackupItem = $BackupItem |
+                Add-Member -MemberType NoteProperty –Name FriendlyName –Value $Container.FriendlyName -PassThru |        
+                Add-Member -MemberType NoteProperty –Name ResourceGroupName –Value $Container.ResourceGroupName -PassThru |
+                Add-Member -MemberType NoteProperty –Name RecoveryServicesVault –Value $RecoveryServicesVault.Name -PassThru 
+ 
+                $BackupItemSummary += $backupItem
+
+            } 
+        }
+
 
 
 }
@@ -162,8 +184,13 @@ $KeyVaults = $KeyVaults |
     Sort-Object Subscription,ResourceGroupName,VaultName
 
 $RecoveryServicesVaults = $RecoveryServicesVaults |
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,BackupStorageRedundancy  |
     Sort-Object Subscription,ResourceGroupName,Name
+
+$BackupItemSummary = $BackupItemSummary |
+    Select-Object -Property FriendlyName,RecoveryServicesVault,ProtectionStatus,ProtectionState,LastBackupStatus,LastBackupTime,ProtectionPolicyName,LatestRecoveryPoint,ContainerName,ContainerType |
+    Sort-Object Subscription,ResourceGroupName,Name
+
 
 #endregion
 
@@ -187,6 +214,7 @@ $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
 $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformation
 $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
 $RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
+$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
 #endregion
 
 
@@ -243,8 +271,8 @@ $MyTableInfo = $VMs | ConvertTo-HTML -fragment
 return $CurrentHTML
 }
 
-$HTMLMiddle += AddH1 "IAM Azure Resource Information Summary Report"
-$HTMLMiddle += AddH2 "SYSTEM: IAM"
+$HTMLMiddle += AddH1 "Azure Resource Information Summary Report"
+#$HTMLMiddle += AddH2 "SYSTEM: IAM"
 $HTMLMiddle += GenericTable $FilteredRGs "Resource Groups" "Detailed Resource Group Info"
 $HTMLMiddle += VMs $VMs
 $HTMLMiddle += GenericTable $StorageAccounts "Storage Accounts" "Detailed Disk Info"
@@ -255,6 +283,7 @@ $HTMLMiddle += GenericTable $AutoAccounts  "Automation Accounts" "Detailed Autom
 $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalystics Info"
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
 $HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
+$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
