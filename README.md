@@ -16,7 +16,7 @@ It is designed to be easily edited to for any specific purpose.  For example you
 
 ## Sample Screenshot
 
-![](Media/report.png)
+![](/Media/report.png)
 
 ## Coming Soon
 
