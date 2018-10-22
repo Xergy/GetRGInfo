@@ -23,7 +23,7 @@ foreach ( $sub in $subs )
     
     $SubRGs = Get-AzureRmResourceGroup |  
         Add-Member -MemberType NoteProperty –Name Subscription –Value $sub.Name -PassThru |
-        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $sub.Id -PassThru | 
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $sub.Id -PassThru |
         Out-GridView -OutputMode Multiple -Title "Select Resource Groups"
 
     foreach ( $SubRG in $SubRGs )
@@ -66,7 +66,10 @@ foreach ( $RG in $RGs )
     $VMs += $RG | 
         Get-AzureRmVM |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
-        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Size –Value ($_.HardwareProfile.Vmsize) -PassThru} |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} #|
+        #Add-Member -MemberType NoteProperty –Name LicenseType –Value ($_.LicenseType) -PassThru  
     
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -147,8 +150,7 @@ foreach ( $RG in $RGs )
 $FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location
 
 $VMs = $VMs | 
-    Add-Member -MemberType ScriptProperty –Name Size –Value {($this.HardwareProfile.Vmsize)} -PassThru | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,Size |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
