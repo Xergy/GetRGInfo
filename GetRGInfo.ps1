@@ -1,4 +1,4 @@
-﻿<#
+﻿<# 
 Write-Host "Please run this script region by region manually in the ISE!"
 #Move to the location of the script if you not threre already.
 $ScriptDir = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition) 
@@ -6,7 +6,7 @@ Set-Location $ScriptDir
 
 #if not logged in to Azure, start login
 if ((Get-AzureRmContext).Account -eq $Null) {
-Login-AzureRmAccount -Environment AzureUSGovernment}
+Connect-AzureRmAccount -Environment AzureUSGovernment}
 
 break
 #>
@@ -68,8 +68,7 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Size –Value ($_.HardwareProfile.Vmsize) -PassThru} |
-        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} #|
-        #Add-Member -MemberType NoteProperty –Name LicenseType –Value ($_.LicenseType) -PassThru  
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} 
     
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -207,10 +206,10 @@ md $mdStr
 
 $FilteredRGs | Export-Csv -Path "$($mdStr)\RGs.csv" -NoTypeInformation 
 $VMs | Export-Csv -Path "$($mdStr)\VMs.csv" -NoTypeInformation 
-$StorageAccounts | Export-Csv -Path "$($mdStrVMs)\StorageAccounts.csv" -NoTypeInformation
+$StorageAccounts | Export-Csv -Path "$($mdStr)\StorageAccounts.csv" -NoTypeInformation
 $Disks | Export-Csv -Path "$($mdStr)\Disks.csv" -NoTypeInformation
 $Vnets | Export-Csv -Path "$($mdStr)\Vnets.csv" -NoTypeInformation
-$NetworkInterfaces | Export-Csv -Path "$($mdStrVMs)\NetworkInterfaces.csv" -NoTypeInformation
+$NetworkInterfaces | Export-Csv -Path "$($mdStr)\NetworkInterfaces.csv" -NoTypeInformation
 $NSGs  | Export-Csv -Path "$($mdStr)\NSGs.csv" -NoTypeInformation
 $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
 $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformation
