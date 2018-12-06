@@ -63,12 +63,14 @@ foreach ( $RG in $RGs )
     
     Select-AzureRmSubscription -SubscriptionName $RG.Subscription | Out-Null
  
-    $VMs += $RG | 
-        Get-AzureRmVM |
+    $VMs +=  Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Size –Value ($_.HardwareProfile.Vmsize) -PassThru} |
-        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} 
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCount –Value ($_.NetworkProfile.NetworkInterfaces.Count) -PassThru} |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCountCap –Value ($_.NetworkProfile.NetworkInterfaces.Capacity) -PassThru} 
+
     
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -88,7 +90,11 @@ foreach ( $RG in $RGs )
     $NetworkInterfaces +=  $RG |
         Get-AzureRmNetworkInterface |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
-        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Owner –Value ($_.VirtualMachine.Id) -PassThru} |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name PrivateIp –Value ($_.IpConfigurations[0].PrivateIpAddress) -PassThru} |
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NSG –Value ($_.NetworkSecurityGroup.id) -PassThru} 
+
 
     $NSGs += $RG |
         Get-AzureRmNetworkSecurityGroup         |
@@ -108,7 +114,7 @@ foreach ( $RG in $RGs )
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
-
+<#
     $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru | 
         ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name BackupStorageRedundancy –Value ((Get-AzureRmRecoveryServicesBackupProperty -Vault $_ ).BackupStorageRedundancy) -PassThru }    
@@ -136,7 +142,7 @@ foreach ( $RG in $RGs )
 
             } 
         }
-
+#>
 
 
 }
@@ -149,7 +155,7 @@ foreach ( $RG in $RGs )
 $FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location
 
 $VMs = $VMs | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType,NicCount,NicCountCap |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
@@ -165,7 +171,7 @@ $Vnets =  $Vnets |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $NetworkInterfaces =  $NetworkInterfaces | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,Primary |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,Owner,PrivateIp,Primary,NSG |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $NSGs = $NSGs | 
@@ -184,6 +190,7 @@ $KeyVaults = $KeyVaults |
     Select-Object -Property VaultName,Subscription,ResourceGroupName,Location |
     Sort-Object Subscription,ResourceGroupName,VaultName
 
+<#
 $RecoveryServicesVaults = $RecoveryServicesVaults |
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,BackupStorageRedundancy  |
     Sort-Object Subscription,ResourceGroupName,Name
@@ -192,6 +199,7 @@ $BackupItemSummary = $BackupItemSummary |
     Select-Object -Property FriendlyName,RecoveryServicesVault,ProtectionStatus,ProtectionState,LastBackupStatus,LastBackupTime,ProtectionPolicyName,LatestRecoveryPoint,ContainerName,ContainerType |
     Sort-Object Subscription,ResourceGroupName,Name
 
+#>
 
 #endregion
 
@@ -214,8 +222,8 @@ $NSGs  | Export-Csv -Path "$($mdStr)\NSGs.csv" -NoTypeInformation
 $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
 $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformation
 $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
-$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
-$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
+#$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
+#$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
 #endregion
 
 
@@ -283,8 +291,8 @@ $HTMLMiddle += GenericTable $NetworkInterfaces "Network Interfaces" "Detailed Ne
 $HTMLMiddle += GenericTable $AutoAccounts  "Automation Accounts" "Detailed Automation Account Info"
 $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalystics Info"
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
-$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
-$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
+#$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
+#$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
