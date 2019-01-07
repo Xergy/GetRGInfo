@@ -1,3 +1,7 @@
+$AVSets = $Null
+$AVSets = Get-AzureRmAvailabilitySet
+$AVSets.VirtualMachinesReferences
+
 $MyVM = Get-AzureRMVM -Name Ariel -ResourceGroupName Prod-RG
 
 $MyVM
@@ -30,3 +34,8 @@ if ((Get-AzureRmContext).Account -eq $Null) {
 $NetworkInerfaces = Get-AzureRmNetworkInterface
 
 $NetworkInerfaces.NetworkSecurityGroup.id | fl *
+
+get-command -Noun "*Avail*"
+
+Get-AzureRmAvailabilitySet 
+
