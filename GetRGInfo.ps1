@@ -55,6 +55,7 @@ $LogAnalystics = @()
 $KeyVaults = @()
 $RecoveryServicesVaults = @()
 $BackupItemSummary = @()
+$AVSets = @()
 
 foreach ( $RG in $RGs )
 {
@@ -69,8 +70,12 @@ foreach ( $RG in $RGs )
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Size –Value ($_.HardwareProfile.Vmsize) -PassThru} |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCount –Value ($_.NetworkProfile.NetworkInterfaces.Count) -PassThru} |
-        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCountCap –Value ($_.NetworkProfile.NetworkInterfaces.Capacity) -PassThru} 
-
+        foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCountCap –Value ($_.NetworkProfile.NetworkInterfaces.Capacity) -PassThru} |
+        foreach-object { $AvailabilitySet = If($_.AvailabilitySetReference){$MyVM.AvailabilitySetReference.Id.Split("/")[8]}Else{$Null} ;
+            $_ | Add-Member -MemberType NoteProperty –Name AvailabilitySet –Value ($AvailabilitySet) -PassThru} |        
+        forEach-Object { $VMStatus = Get-AzureRMVM -Name $_.Name -ResourceGroupName $RG.ResourceGroupName -Status ;
+            $_ | Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
+                Add-Member -MemberType NoteProperty –Name UpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru} 
     
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -114,6 +119,7 @@ foreach ( $RG in $RGs )
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
+
 <#
     $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru | 
@@ -144,6 +150,10 @@ foreach ( $RG in $RGs )
         }
 #>
 
+    $AVSets +=  $RG | Get-AzureRmAvailabilitySet |
+    Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+    Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
+
 }
 
 #endregion
@@ -154,7 +164,7 @@ foreach ( $RG in $RGs )
 $FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location
 
 $VMs = $VMs | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType,NicCount,NicCountCap |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
@@ -200,6 +210,10 @@ $BackupItemSummary = $BackupItemSummary |
 
 #>
 
+$AVSets = $AVSets | 
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,PlatformFaultDomainCount,PlatformUpdateDomainCount |
+    Sort-Object Subscription,ResourceGroupName,Name
+
 #endregion
 
 
@@ -224,6 +238,7 @@ $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
 #$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
 #$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
 #endregion
+$AVSets | Export-Csv -Path "$($mdStr)\AVSets.csv" -NoTypeInformation
 
 
 #region Build HTML Report, Export to C:\
@@ -292,6 +307,7 @@ $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalys
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
 #$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
 #$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
+$HTMLMiddle += GenericTable $AVSets "Availability Sets" "Detailed AVSet Info"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
