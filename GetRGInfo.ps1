@@ -82,7 +82,7 @@ foreach ( $RG in $RGs )
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name OsType –Value ($_.StorageProfile.OsDisk.OsType) -PassThru} |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCount –Value ($_.NetworkProfile.NetworkInterfaces.Count) -PassThru} |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NicCountCap –Value ($_.NetworkProfile.NetworkInterfaces.Capacity) -PassThru} |
-        foreach-object { $AvailabilitySet = If($_.AvailabilitySetReference){$MyVM.AvailabilitySetReference.Id.Split("/")[8]}Else{$Null} ;
+        foreach-object { $AvailabilitySet = If($_.AvailabilitySetReference){$_.AvailabilitySetReference.Id.Split("/")[8]}Else{$Null} ;
             $_ | Add-Member -MemberType NoteProperty –Name AvailabilitySet –Value ($AvailabilitySet) -PassThru} |        
         forEach-Object { $VMStatus = Get-AzureRMVM -Name $_.Name -ResourceGroupName $RG.ResourceGroupName -Status ;
             $_ | Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
