@@ -58,5 +58,12 @@ $NetworkInerfaces.NetworkSecurityGroup.id | fl *
 
 get-command -Noun "*Avail*"
 
-Get-AzureRmAvailabilitySet 
+(Get-AzureRmAvailabilitySet)[0] | Select-Object -Property ResourceGroupName, @{N='AvailabilitySetName';E={$_.Name}} | Get-AzureRmVMSize | Measure-Object
+
+(Get-AzureRmAvailabilitySet)[0] |  Get-AzureRmVMSize | Measure-Object
+
+Get-AzureRmVMSize -AvailabilitySetName
+
+Show-Command Get-AzureRmVMSize
+get-help Get-AzureRmVMSize -ShowWindow
 
