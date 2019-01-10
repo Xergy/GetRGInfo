@@ -1,15 +1,26 @@
-﻿<# 
-Write-Host "Please run this script region by region manually in the ISE!"
-#Move to the location of the script if you not threre already.
+﻿<#
+    .SYNOPSIS
+        Gathers selected cross subscription Azure configuration details by resource group, and outputs to csv, html, and zip
+
+    .NOTES
+        GetRGInfo allows a user to pick specific Subs/RGs in out-gridview 
+        and export info to CSV and html report.
+
+        It is designed to be easily edited to for any specific purpose.
+
+        It writes temp data to C:\temp. It also zips up the final results.
+
+    .EXAMPLE
+        .\GetRGInfo.ps1
+
+#>
+
 $ScriptDir = [System.IO.Path]::GetDirectoryName($myInvocation.MyCommand.Definition) 
 Set-Location $ScriptDir
 
 #if not logged in to Azure, start login
 if ((Get-AzureRmContext).Account -eq $Null) {
 Connect-AzureRmAccount -Environment AzureUSGovernment}
-
-break
-#>
 
 #region Build Config File
 
@@ -152,7 +163,17 @@ foreach ( $RG in $RGs )
 
     $AVSets +=  $RG | Get-AzureRmAvailabilitySet |
     Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
-    Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
+    Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru | 
+    ForEach-Object {
+        $AvailVMSizesD =($_ | Get-AzureRmVMSize | ForEach-Object { $_.Name} | Where-Object {$_ -like "Standard_D*" -and $_ -notlike "*promo*" -and $_ -notlike "*v*"} | ForEach-Object {$_.Replace("Standard_","") } | Sort-Object ) -join " " ;
+        $AvailVMSizesDv2 =($_ | Get-AzureRmVMSize | ForEach-Object { $_.Name} | Where-Object {$_ -like "Standard_D*" -and $_ -notlike "*promo*" -and $_ -like "*v2*"} | ForEach-Object {$_.Replace("Standard_","") } | Sort-Object ) -join " " ;
+        $AvailVMSizesDv3 =($_ | Get-AzureRmVMSize | ForEach-Object { $_.Name} | Where-Object {$_ -like "Standard_D*" -and $_ -notlike "*promo*" -and $_ -like "*v3*"} | ForEach-Object {$_.Replace("Standard_","") } | Sort-Object ) -join " " ;
+        $AvailVMSizesA =($_ | Get-AzureRmVMSize | ForEach-Object { $_.Name} | Where-Object {$_ -like "Standard_A*" -and $_ -notlike "*promo*"} | ForEach-Object {$_.Replace("Standard_","") } | Sort-Object ) -join " " ;
+        $_ | Add-Member -MemberType NoteProperty –Name AvailVMSizesD –Value $AvailVMSizesD -PassThru |
+        Add-Member -MemberType NoteProperty –Name AvailVMSizesDv2 –Value $AvailVMSizesDv2 -PassThru |
+        Add-Member -MemberType NoteProperty –Name AvailVMSizesDv3 –Value $AvailVMSizesDv3 -PassThru |
+        Add-Member -MemberType NoteProperty –Name AvailVMSizesA –Value $AvailVMSizesA -PassThru
+    }
 
 }
 
@@ -210,9 +231,17 @@ $BackupItemSummary = $BackupItemSummary |
 
 #>
 
-$AVSets = $AVSets | 
+$AVsetsAll = $AVSets
+
+$AVSets = $AVsetsAll | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,PlatformFaultDomainCount,PlatformUpdateDomainCount |
     Sort-Object Subscription,ResourceGroupName,Name
+
+$AVSetSizes = $AVsetsAll | 
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,AvailVMSizesA,AvailVMSizesD,AvailVMSizesDv2,AvailVMSizesDv3 |
+    Sort-Object Subscription,ResourceGroupName,Name
+
+
 
 #endregion
 
@@ -237,8 +266,9 @@ $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformati
 $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
 #$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
 #$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
-#endregion
 $AVSets | Export-Csv -Path "$($mdStr)\AVSets.csv" -NoTypeInformation
+$AVSetSizes | Export-Csv -Path "$($mdStr)\AVSetSizes.csv" -NoTypeInformation
+#endregion
 
 
 #region Build HTML Report, Export to C:\
@@ -307,7 +337,8 @@ $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalys
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
 #$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
 #$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
-$HTMLMiddle += GenericTable $AVSets "Availability Sets" "Detailed AVSet Info"
+$HTMLMiddle += GenericTable $AVSets "Availability Sets Info" "Detailed AVSet Info"
+$HTMLMiddle += GenericTable $AVSetSizes "Availability Sets Available VM Sizes" "AVSet Available VM Sizes"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
