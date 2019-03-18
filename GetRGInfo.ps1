@@ -56,6 +56,8 @@ $Rgs | Export-Csv -NoTypeInformation -Path "config.csv"
 $RGs = Import-Csv -Path "config.csv"
 
 $VMs = @()
+$Tags = @()
+$UniqueTags = @()
 $StorageAccounts = @()
 $Disks = @() 
 $Vnets = @()
@@ -88,6 +90,8 @@ foreach ( $RG in $RGs )
             $_ | Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
                 Add-Member -MemberType NoteProperty –Name UpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru} 
     
+    $UniqueTags += $VMs.Tags | Select-Object -ExpandProperty keys | Select-Object -Unique | Sort-Object
+
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
@@ -111,12 +115,11 @@ foreach ( $RG in $RGs )
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name PrivateIp –Value ($_.IpConfigurations[0].PrivateIpAddress) -PassThru} |
         foreach-object { $_ | Add-Member -MemberType NoteProperty –Name NSG –Value ($_.NetworkSecurityGroup.id) -PassThru} 
 
-
     $NSGs += $RG |
         Get-AzureRmNetworkSecurityGroup         |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
-
+      
     $AutoAccounts += $RG | 
         Get-AzureRmAutomationAccount |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
@@ -179,6 +182,32 @@ foreach ( $RG in $RGs )
 
 }
 
+# Post-Process Tags
+
+$Tags = @()
+
+foreach ($VM in $VMs) {
+    $VMTag = New-Object -TypeName PSObject
+    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name Name -Value $VM.Name
+    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name Subscription -Value $VM.Subscription
+    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name ResourceGroupName -Value $VM.ResourceGroupName
+    
+    foreach ($UniqueTag in $UniqueTags) {
+
+        $TagValue = $Null
+
+        if ($VMs[0].Tags.ContainsKey($UniqueTag) ) { 
+            $TagValue = $VM.Tags.$UniqueTag
+        }
+
+        Add-Member -InputObject $VMTag -MemberType NoteProperty -Name $UniqueTag -Value $TagValue
+    }
+    $Tags += $VMTag
+}
+
+$TagsProps = "Subscription","ResourceGroupName","Name" 
+$TagsProps += $UniqueTags
+
 #endregion
 
 
@@ -188,6 +217,9 @@ $FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,Su
 
 $VMs = $VMs | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
+    Sort-Object Subscription,ResourceGroupName,Name
+
+$Tags = $Tags | Select-Object -Property $TagsProps
     Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
@@ -258,6 +290,7 @@ md $mdStr
 
 $FilteredRGs | Export-Csv -Path "$($mdStr)\RGs.csv" -NoTypeInformation 
 $VMs | Export-Csv -Path "$($mdStr)\VMs.csv" -NoTypeInformation 
+$Tags | Export-Csv -Path "$($mdStr)\Tags.csv" -NoTypeInformation 
 $StorageAccounts | Export-Csv -Path "$($mdStr)\StorageAccounts.csv" -NoTypeInformation
 $Disks | Export-Csv -Path "$($mdStr)\Disks.csv" -NoTypeInformation
 $Vnets | Export-Csv -Path "$($mdStr)\Vnets.csv" -NoTypeInformation
@@ -330,6 +363,7 @@ $HTMLMiddle += AddH1 "Azure Resource Information Summary Report"
 #$HTMLMiddle += AddH2 "SYSTEM: IAM"
 $HTMLMiddle += GenericTable $FilteredRGs "Resource Groups" "Detailed Resource Group Info"
 $HTMLMiddle += VMs $VMs
+$HTMLMiddle += GenericTable $Tags "Tags" "Detailed Tag Info"
 $HTMLMiddle += GenericTable $StorageAccounts "Storage Accounts" "Detailed Disk Info"
 $HTMLMiddle += GenericTable $Disks  "Disks" "Detailed Disk Info"
 $HTMLMiddle += GenericTable $Vnets "VNet" "Detailed VNet Info"
