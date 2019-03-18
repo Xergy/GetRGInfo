@@ -89,8 +89,6 @@ foreach ( $RG in $RGs )
         forEach-Object { $VMStatus = Get-AzureRMVM -Name $_.Name -ResourceGroupName $RG.ResourceGroupName -Status ;
             $_ | Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
                 Add-Member -MemberType NoteProperty –Name UpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru} 
-    
-    $UniqueTags += $VMs.Tags | Select-Object -ExpandProperty keys | Select-Object -Unique | Sort-Object
 
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -185,6 +183,7 @@ foreach ( $RG in $RGs )
 # Post-Process Tags
 
 $Tags = @()
+$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys | Select-Object -Unique | Sort-Object
 
 foreach ($VM in $VMs) {
     $VMTag = New-Object -TypeName PSObject
