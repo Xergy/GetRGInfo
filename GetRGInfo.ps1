@@ -132,10 +132,10 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
 
-<#
+
     $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
-        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru | 
-        ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name BackupStorageRedundancy –Value ((Get-AzureRmRecoveryServicesBackupProperty -Vault $_ ).BackupStorageRedundancy) -PassThru }    
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #| 
+        #ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name BackupStorageRedundancy –Value ((Get-AzureRmRecoveryServicesBackupProperty -Vault $_ ).BackupStorageRedundancy) -PassThru }    
 
     #BackupItems Summary
 
@@ -160,7 +160,7 @@ foreach ( $RG in $RGs )
 
             } 
         }
-#>
+
 
     $AVSets +=  $RG | Get-AzureRmAvailabilitySet |
     Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
@@ -253,16 +253,13 @@ $KeyVaults = $KeyVaults |
     Select-Object -Property VaultName,Subscription,ResourceGroupName,Location |
     Sort-Object Subscription,ResourceGroupName,VaultName
 
-<#
 $RecoveryServicesVaults = $RecoveryServicesVaults |
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,BackupStorageRedundancy  |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location  |
     Sort-Object Subscription,ResourceGroupName,Name
 
 $BackupItemSummary = $BackupItemSummary |
     Select-Object -Property FriendlyName,RecoveryServicesVault,ProtectionStatus,ProtectionState,LastBackupStatus,LastBackupTime,ProtectionPolicyName,LatestRecoveryPoint,ContainerName,ContainerType |
     Sort-Object Subscription,ResourceGroupName,Name
-
-#>
 
 $AVsetsAll = $AVSets
 
@@ -298,8 +295,8 @@ $NSGs  | Export-Csv -Path "$($mdStr)\NSGs.csv" -NoTypeInformation
 $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
 $LogAnalystics | Export-Csv -Path "$($mdStr)\LogAnalystics.csv" -NoTypeInformation
 $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
-#$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
-#$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
+$RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
+$BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
 $AVSets | Export-Csv -Path "$($mdStr)\AVSets.csv" -NoTypeInformation
 $AVSetSizes | Export-Csv -Path "$($mdStr)\AVSetSizes.csv" -NoTypeInformation
 #endregion
@@ -370,8 +367,8 @@ $HTMLMiddle += GenericTable $NetworkInterfaces "Network Interfaces" "Detailed Ne
 $HTMLMiddle += GenericTable $AutoAccounts  "Automation Accounts" "Detailed Automation Account Info"
 $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalystics Info"
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
-#$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
-#$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
+$HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
+$HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
 $HTMLMiddle += GenericTable $AVSets "Availability Sets Info" "Detailed AVSet Info"
 $HTMLMiddle += GenericTable $AVSetSizes "Availability Sets Available VM Sizes" "AVSet Available VM Sizes"
 
