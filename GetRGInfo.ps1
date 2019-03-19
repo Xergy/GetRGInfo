@@ -139,7 +139,7 @@ foreach ( $RG in $RGs )
 
     #BackupItems Summary
 
-        foreach ($recoveryservicesvault in $recoveryservicesvaults) {
+        foreach ($recoveryservicesvault in (Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName)) {
             #write-host $recoveryservicesvault.name
             Get-AzureRmRecoveryServicesVault -Name $recoveryservicesvault.Name | Set-AzureRmRecoveryServicesVaultContext   
 
