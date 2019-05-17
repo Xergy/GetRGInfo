@@ -183,7 +183,7 @@ foreach ( $RG in $RGs )
 # Post-Process Tags
 
 $Tags = @()
-$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys | Select-Object -Unique | Sort-Object
+$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys| ForEach-Object { ([String]$_).ToUpper() } | Select-Object -Unique | Sort-Object
 
 foreach ($VM in $VMs) {
     $VMTag = New-Object -TypeName PSObject
