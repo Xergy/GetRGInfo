@@ -182,30 +182,32 @@ foreach ( $RG in $RGs )
 
 # Post-Process Tags
 
-$Tags = @()
-$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys| ForEach-Object { ([String]$_).ToUpper() } | Select-Object -Unique | Sort-Object
+[System.Collections.ArrayList]$Tags = @()
+#$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys| ForEach-Object { ([String]$_).ToUpper() } | Select-Object -Unique | Sort-Object
+$UniqueTags = $VMs.Tags.Keys.ToUpper() | Select-Object -Unique | Sort-Object
 
 foreach ($VM in $VMs) {
-    $VMTag = New-Object -TypeName PSObject
-    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name Name -Value $VM.Name
-    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name Subscription -Value $VM.Subscription
-    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name ResourceGroupName -Value $VM.ResourceGroupName
+    $VMTagHash = [Ordered]@{
+        Name = $VM.Name
+        Subscription = $VM.Subscription
+        ResrouceGroupName = $VM.ResourceGroupName
+    }
     
     foreach ($UniqueTag in $UniqueTags) {
-
         $TagValue = $Null
-
-        if ($VMs[0].Tags.ContainsKey($UniqueTag) ) { 
-            $TagValue = $VM.Tags.$UniqueTag
+        if ($VM.Tags.Keys -contains $UniqueTag) {
+            $TagName = $VM.Tags.Keys.Where{$_ -eq $UniqueTag}
+            $TagValue = $VM.Tags[$TagName]
         }
 
-        Add-Member -InputObject $VMTag -MemberType NoteProperty -Name $UniqueTag -Value $TagValue
+        $VMTagHash.$UniqueTag = $TagValue
     }
-    $Tags += $VMTag
+    $VMTag = [PSCustomObject]$VMTagHash
+    [Void]$Tags.Add($VMTag)
 }
 
-$TagsProps = "Subscription","ResourceGroupName","Name" 
-$TagsProps += $UniqueTags
+#$TagsProps = "Subscription","ResourceGroupName","Name" 
+#$TagsProps += $UniqueTags
 
 #endregion
 
@@ -218,8 +220,7 @@ $VMs = $VMs |
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,OSType,Size,LicenseType,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
     Sort-Object Subscription,ResourceGroupName,Name
 
-$Tags = $Tags | Select-Object -Property $TagsProps
-    Sort-Object Subscription,ResourceGroupName,Name
+$Tags = $Tags | Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
     Select-Object -Property StorageAccountName,Subscription,ResourceGroupName,Location |
