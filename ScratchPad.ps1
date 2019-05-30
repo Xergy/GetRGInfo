@@ -1,98 +1,212 @@
-$AVSets = $Null
-$AVSets = Get-AzureRmAvailabilitySet
-$AVSets[3].VirtualMachinesReferencesText
 
-#$MyVM = Get-AzureRMVM -Name Ariel -ResourceGroupName Prod-RG
+#$MyVM = $VMsStatus | Where-Object {$_.name -eq "f5deployment-f5instance0"}
 
-$MyVM = Get-AzureRMVM -Name VMResizeTest05 -ResourceGroupName Prod-RG | ForEach-Object { 
-        $VMStatus = Get-AzureRMVM -Name $_.Name -ResourceGroupName Prod-RG -Status ;
-        $_ | Add-Member -MemberType NoteProperty –Name PlatformFaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
-        Add-Member -MemberType NoteProperty –Name PlatformUpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru 
-    }
+$MyVM = get-azurermvm -ResourceGroupName Prod-RG -Name VMResizeTest05 -status
 
-    $MyVM.PlatformFaultDomain
-    $MyVM.PlatformUpdateDomain
+$MyVM
 
-    $MyVM =  Get-AzureRMVM -Name VMResizeTest05 -ResourceGroupName Prod-RG |
-    foreach-object { $_ | Add-Member -MemberType NoteProperty –Name Size –Value ($_.HardwareProfile.Vmsize) -PassThru} |
-    foreach-object { Get-AzureRmVm -Status -ResourceGroupName $RG.ResourceGroupName -Name $_.Name |   $_ | Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($_.NetworkProfile.NetworkInterfaces.Capacity) -PassThru} 
+# # $MyVault = Get-AzureRmRecoveryServicesVault -ResourceGroupName "Prod-RG"
 
+# # Get-AzureRmRecoveryServicesAsrNotificationSetting -
 
+# # Get-AzureRmNetworkSecurityGroup | Out-GridView
 
-$MyVMStatus = Get-AzureRMVM -Name $MyVM.Name -ResourceGroupName Prod-RG -Status
-$MyVMStatus.PlatformFaultDomain
-$MyVMStatus.PlatformUpdateDomain
+# # (Get-AzureRmNetworkSecurityGroup)[0] | fl *
 
-If($MyVM.AvailabilitySetReference){$MyVM.AvailabilitySetReference.Id.Split("/")[8]}Else{$Null}
+# $NSGs = Get-AzureRmNetworkSecurityGroup | Select-Object -Property Name 
 
-$MyVM.AvailabilitySetReference.Id.Split("/")[8]
+# $MyNSGs 
+# # (Get-AzureRmNetworkSecurityGroup)[0] | fl *
 
-$MyVM.NetworkProfile.NetworkInterfaces.Capacity
-$MyVM.NetworkProfile.NetworkInterfaces.Count
+# $MyNSGs 
+# $NSGs_Filtered = @()
 
-$VMs.StorageProfile.OsDisk.OsType
-
-$RGs[0] | get-azurermvm
-
-$NetworkInterfaces[0].VirtualMachine.Id
-$NetworkInterfaces[0].IpConfigurations[0].PrivateIpAddress
-
-#if not logged in to Azure, start login
-if ((Get-AzureRmContext).Account -eq $Null) {
+# foreach ($NSG in $NSGs) {
     
-    Connect-AzureRmAccount -Environment AzureUSGovernment}
-    
-    #List all subs:
-    Get-AzureRmSubscription
-    
-    #Choose a Sub
-    
-    Get-AzureRmSubscription | 
-        # Select-Object -Property Name,SubscriptionId,TenantId,State | 
-        Out-GridView -OutputMode Single -Title  "Choose a Subscription" | Set-AzureRmContext
+#     $NSGs_Filtered += $NSG | Select-Object -Property Name, ResourceGroupName, Location,
+#         @{N='SecurityRuleName';E={
+#                 ($_.SecurityRules.Name) -join " "
+#                 } 
+#          },
+#          @{N='DefaultSecurityRuleName';E={
+#                 ($_.DefaultSecurityRules.Name) -join " "
+#                 } 
+#          },
+#          @{N='NetworkInterfaceName';E={
+#             (  $_.NetworkInterfaces.ID.tostring().substring($_.NetworkInterfaces.ID.tostring().lastindexof('/')+1) ) -join " "
+#             }
+#          }, 
+#          @{N='SubnetName';E={
+#             (  $_.Subnets.ID.tostring().substring($_.Subnets.ID.tostring().lastindexof('/')+1) ) -join " "
+#             } 
+#         }        
+# }
+
+# $NSGs_Filtered
+
+# # Select-Object -Property Name, @{Name="VMName";Expression = { $_.VirtualMachine.Id.tostring().substring($_.VirtualMachine.Id.tostring().lastindexof('/')+1) }
+# # $NSGs[0].DefaultSecurityRules.Name 
+# $NSGs_Filtered = @()
+# $NSGs_Final = $NSGs | ForEach-Object {
+#     $_ | Select-Object -Property Name, ResourceGroupName, Location,
+#         @{N='SecurityRuleName';E={
+#                 ($_.SecurityRules.Name) -join " "
+#                 } 
+#          },
+#          @{N='DefaultSecurityRuleName';E={
+#                 ($_.DefaultSecurityRules.Name) -join " "
+#                 } 
+#          },
+#          @{N='NetworkInterfaceName';E={
+#             (  $_.NetworkInterfaces.ID.tostring().substring($_.NetworkInterfaces.ID.tostring().lastindexof('/')+1) ) -join " "
+#             }
+#          }, 
+#          @{N='SubnetName';E={
+#             (  $_.Subnets.ID.tostring().substring($_.Subnets.ID.tostring().lastindexof('/')+1) ) -join " "
+#             } 
+#         }  
+# }
+
+# $NSGs_Final = @()
+# $NSGs_Final = $NSGs | 
+#     Select-Object -Property Name, ResourceGroupName, Location,
+#         @{N='SecurityRuleName';E={
+#                 ($_.SecurityRules.Name) -join " "
+#                 } 
+#          },
+#          @{N='NetworkInterfaceName';E={
+#             ($_.NetworkInterfaces.ID | ForEach-Object {$_.tostring().substring($_.tostring().lastindexof('/')+1) } ) -join " " 
+#             }
+#          }, 
+#          @{N='SubnetName';E={
+#             ( $_.Subnets.ID | ForEach-Object {$_.tostring().substring($_.tostring().lastindexof('/')+1) } ) -join " "
+#             } 
+#         }  
+
+#         $NSGs_Final | ogv
+
+# ($NSGs[0].NetworkInterfaces.Id) -join " "
+# (  $NSGs[2].NetworkInterfaces.ID.tostring().substring($NSGs[2].NetworkInterfaces.ID.tostring().lastindexof('/')+1) ) -join " "
 
 
-$NetworkInerfaces = Get-AzureRmNetworkInterface
 
-$NetworkInerfaces.NetworkSecurityGroup.id | fl *
+# ($NSGs[1].NetworkInterfaces.ID | ForEach-Object {$_.tostring().substring($_.tostring().lastindexof('/')+1) } ) -join " " 
 
-get-command -Noun "*Avail*"
+# | Get-AzureRmVMSize | ForEach-Object { $_.Name} | Where-Object {$_ -like "Standard_F*" -and $_ -notlike "*promo*" } | ForEach-Object {$_.Replace("Standard_","") } | Sort-Object ) -join " " ;
 
-(Get-AzureRmAvailabilitySet)[0] | Select-Object -Property ResourceGroupName, @{N='AvailabilitySetName';E={$_.Name}} | Get-AzureRmVMSize | Measure-Object
 
-(Get-AzureRmAvailabilitySet)[0] |  Get-AzureRmVMSize | Measure-Object
+# $NetworkInterfaces = Get-AzureRmNetworkInterface
 
-Get-AzureRmVMSize -AvailabilitySetName
+# ($NetworkInterfaces[0].IpConfigurations.PrivateIpAddress) -join " "  
 
-Show-Command Get-AzureRmVMSize
-get-help Get-AzureRmVMSize -ShowWindow
 
-#Tags Scratch
+# $NetworkInterfaces +=  $RG |
+# Get-AzureRmNetworkInterface |
+# Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+# Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
+# ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name PrivateIp –Value ($_.IpConfigurations[0].PrivateIpAddress) -PassThru} |
+# Select-Object *,
+#     @{N='NSG';E={
+#         $_.NetworkSecurityGroup.id.tostring().substring($_.NetworkSecurityGroup.id.tostring().lastindexof('/')+1)
+#         }
+#     },
+#     @{N='Owner';E={
+#         $_.VirtualMachine.Id.tostring().substring($_.VirtualMachine.Id.tostring().lastindexof('/')+1)
+#         }
+#     },
+#     @{N='PrivateIPs';E={
+#         ($_.IpConfigurations.PrivateIpAddress) -join " "  
+#         }
+#     },
+#     @{N='DnsServers';E={
+#         ($_.DnsSettings.DnsServers) -join " "  
+#         }
+#     }
 
-$VMs = Get-AzureRmVm
 
-$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys | Select-Object -Unique | Sort-Object
+#     get-azurermvm -Status -ResourceGroupName Prod-RG | Select-Object -First 1 | fl *
 
-$VMsTags = @()
 
-foreach ($VM in $VMs) {
-    $VMTag = New-Object -TypeName PSObject
-    Add-Member -InputObject $VMTag -MemberType NoteProperty -Name Name -Value $VM.Name
-    
-    foreach ($UniqueTag in $UniqueTags) {
-        # Write-Host "UniqueTag $UniqueTag"
-        # $VM.Tags
-        $TagValue = $Null
+#     ($vm | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
 
-        if ($VMs[0].Tags.ContainsKey("ProjectName") ) { 
-            $TagValue = $VM.Tags.$UniqueTag
-        }
 
-        Add-Member -InputObject $VMTag -MemberType NoteProperty -Name $UniqueTag -Value $TagValue
-    }
-    $VMsTags += $VMTag
-}
+#    $subscriptionId = '83dd191a-2254-42cb-bb78-a2394953b37c'
 
-$VMsTags[0]
 
-$VMsTags | Measure-Object
+
+#    $VMs =  Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName
+
+#    (($VMs[0] | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
+
+#    $VMStatus = Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName -Status | ForEach-Object { ($_.statuses)}
+
+#    $VMStatus[0].PowerState
+
+# $VMs[0] | fl *
+
+# # VM Object, query VMstatus, get STatus, add as property
+
+# $VMs[0] | ForEach-Object { 
+#     $_ | foreach-object { $VM = $_ ;
+#         $VMStatus | Where-Object {$VM.Name -eq $_.Name -and $VM.Location -eq $_.Location } |
+#             foreach-object {$_.PowerState}
+#     }  
+# }
+
+#                     $_ | ForEach-Object { 
+#                         $_ | foreach-object { $VM = $_ ;
+#                             $VMStatus | Where-Object {$VM.Name -eq $_.Name -and $VM.Location -eq $_.Location } |
+#                                 foreach-object {$_.PowerState}
+#                         }  
+#                     }
+
+
+#         $VMStatusTest = Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName -Status
+
+
+#         Select-Object *,
+#         @{N='PowerState';E={
+#                 $_ | ForEach-Object { 
+#                     $_ | foreach-object { $VM = $_ ;
+#                         $VMStatus | Where-Object {$VM.Name -eq $_.Name -and $VM.Location -eq $_.Location } |
+#                             foreach-object {$_.PowerState}
+#                     }  
+#                 }                    
+#             }
+#         }  
+
+#         Get-AzureRmRecoveryServicesVault -ResourceGroupName Prod-RG
+
+#         $responce = Invoke-RestMethod -Method Get -Uri $url -Headers @{ "Authorization" = "Bearer " + $accessToken }
+
+
+
+#         $VMSizes = Get-AzureRmVMSize -Location $Locations
+# $VMSizes | ogv
+#         NumberOfCores MemoryInMB
+
+#         $VMSizes | Select-Object -Property Name,NumberOfCores,MemoryInMB,
+#             @{N='MemoryInGB';E={
+#                 "{0:n2}" -f [int]($_.MemoryInMB)/[int]1024            
+#                 } 
+#             } 
+
+
+
+# $Locations = @()
+# $Locations = $RGs.Location | Select-Object -Unique
+# $VMSizes = $Locations | 
+#     foreach-object {
+#         $Location = $_ ;
+#         Get-AzureRmVMSize -Location $_ | 
+#         Select-Object *, 
+#             @{N='Location';E={$Location}},
+#             @{N='MemoryInGB';E={"{0:n2}" -f [int]($_.MemoryInMB)/[int]1024}} 
+#     } 
+#     Select-Object -Property Name,NumberOfCores,MemoryInMB,
+
+#     Add-Member -MemberType NoteProperty –Name FaultDomain –Value ($VMStatus.PlatformFaultDomain) -PassThru |
+#     Add-Member -MemberType NoteProperty –Name UpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru | 
+
+
+(($vm | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
