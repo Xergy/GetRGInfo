@@ -535,6 +535,7 @@ $HTMLMiddle += GenericTable $StorageAccounts "Storage Accounts" "Detailed Disk I
 $HTMLMiddle += GenericTable $Disks  "Disks" "Detailed Disk Info"
 $HTMLMiddle += GenericTable $Vnets "VNet" "Detailed VNet Info"
 $HTMLMiddle += GenericTable $NetworkInterfaces "Network Interfaces" "Detailed Network Interface Info"
+$HTMLMiddle += GenericTable $NSGs "Network Security Groups" "Detailed Network Security Groups Info"
 $HTMLMiddle += GenericTable $AutoAccounts  "Automation Accounts" "Detailed Automation Account Info"
 $HTMLMiddle += GenericTable $LogAnalystics  "Log Analystics" "Detailed LogAnalystics Info"
 $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
