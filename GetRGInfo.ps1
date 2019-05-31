@@ -91,7 +91,7 @@ $VMSizes = $Locations |
 foreach ( $RG in $RGs )
 {
     
-    Write-Host "Gathering Info for $($RG.ResourceGroupName)" -ForegroundColor Cyan
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Gathering Info for $($RG.ResourceGroupName) " -ForegroundColor Cyan
     
     Select-AzureRmSubscription -SubscriptionName $RG.Subscription | Out-Null
 
@@ -103,13 +103,13 @@ foreach ( $RG in $RGs )
             | Sort-Object -Property ExpiresOn -Descending
     $accessToken = $cachedTokens[0].AccessToken
     
-    Write-Host "Gathering Info for $($RG.ResourceGroupName) VMs" -ForegroundColor Cyan
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Gathering Info for $($RG.ResourceGroupName) VMs" -ForegroundColor Cyan
     $RGVMs = Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName
     
-    Write-Host "Gathering Info for $($RG.ResourceGroupName) VM Status" -ForegroundColor Cyan
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Gathering Info for $($RG.ResourceGroupName) VM Status" -ForegroundColor Cyan
     #Below one by one data grab resolves issue with getting fault/update domain info
     $VMsStatus += $RGVMs | foreach-object {Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName -Name $_.Name -Status }
-    Write-Host "Processing Info for $($RG.ResourceGroupName) VMs" -ForegroundColor Cyan
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) VMs" -ForegroundColor Cyan
     $VMs +=  $RGVMs |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
@@ -148,13 +148,13 @@ foreach ( $RG in $RGs )
                 }  
         }
           
-    Write-Host "Processing Info for $($RG.ResourceGroupName) StorageAccounts" -ForegroundColor Cyan    
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) StorageAccounts" -ForegroundColor Cyan    
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
     
-    Write-Host "Processing Info for $($RG.ResourceGroupName) Disks" -ForegroundColor Cyan 
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Disks" -ForegroundColor Cyan 
     $Disks += $RG |
         Get-AzureRmDisk |
         Select-Object -Property *,
@@ -189,13 +189,13 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
  
-    Write-Host "Processing Info for $($RG.ResourceGroupName) Vnets" -ForegroundColor Cyan        
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Vnets" -ForegroundColor Cyan        
     $Vnets +=  $RG | 
         Get-AzureRmVirtualNetwork |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
-    Write-Host "Processing Info for $($RG.ResourceGroupName) NetworkInterfaces" -ForegroundColor Cyan 
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) NetworkInterfaces" -ForegroundColor Cyan 
     $NetworkInterfaces +=  $RG |
         Get-AzureRmNetworkInterface |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
@@ -219,7 +219,7 @@ foreach ( $RG in $RGs )
                 }
             }
 
-    Write-Host "Processing Info for $($RG.ResourceGroupName) MSGs" -ForegroundColor Cyan 
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) MSGs" -ForegroundColor Cyan 
     $NSGs += $RG |
         Get-AzureRmNetworkSecurityGroup         |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
@@ -242,25 +242,25 @@ foreach ( $RG in $RGs )
             } 
         }  
 
-    Write-Host "Processing Info for $($RG.ResourceGroupName) Automation Accounts" -ForegroundColor Cyan   
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Automation Accounts" -ForegroundColor Cyan   
     $AutoAccounts += $RG | 
         Get-AzureRmAutomationAccount |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru #|
         #Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
         
-    Write-Host "Processing Info for $($RG.ResourceGroupName) LogAnalystics" -ForegroundColor Cyan   
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) LogAnalystics" -ForegroundColor Cyan   
     $LogAnalystics += $RG |
         Get-AzureRmOperationalInsightsWorkspace |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
         
-    Write-Host "Processing Info for $($RG.ResourceGroupName) KeyVaults" -ForegroundColor Cyan   
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) KeyVaults" -ForegroundColor Cyan   
     $KeyVaults += Get-AzureRmKeyVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru
 
         
-    Write-Host "Processing Info for $($RG.ResourceGroupName) Recovery Services Vaults" -ForegroundColor Cyan   
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Recovery Services Vaults" -ForegroundColor Cyan   
     $RecoveryServicesVaults += Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Select-Object *,
@@ -274,7 +274,7 @@ foreach ( $RG in $RGs )
 
     #BackupItems Summary
         
-        Write-Host "Processing Info for $($RG.ResourceGroupName) Backup Items" -ForegroundColor Cyan   
+        Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Backup Items" -ForegroundColor Cyan   
         foreach ($recoveryservicesvault in (Get-AzureRmRecoveryServicesVault -ResourceGroupName ($RG).ResourceGroupName)) {
             #write-host $recoveryservicesvault.name
             Get-AzureRmRecoveryServicesVault -Name $recoveryservicesvault.Name | Set-AzureRmRecoveryServicesVaultContext   
@@ -297,7 +297,7 @@ foreach ( $RG in $RGs )
             } 
         }
 
-    Write-Host "Processing Info for $($RG.ResourceGroupName) AVSets" -ForegroundColor Cyan  
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) AVSets" -ForegroundColor Cyan  
     $AVSets +=  $RG | Get-AzureRmAvailabilitySet |
     Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
     Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru | 
@@ -318,7 +318,7 @@ foreach ( $RG in $RGs )
 
 # Post-Process Tags
 
-Write-Host "Processing Info for All Tags" -ForegroundColor Cyan  
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for All Tags" -ForegroundColor Cyan  
 [System.Collections.ArrayList]$Tags = @()
 #$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys| ForEach-Object { ([String]$_).ToUpper() } | Select-Object -Unique | Sort-Object
 $UniqueTags = $VMs.Tags.Keys.ToUpper() | Select-Object -Unique | Sort-Object
@@ -351,7 +351,7 @@ foreach ($VM in $VMs) {
 
 
 #region Filter and Sort Gathered Info
-Write-Host "Filtering Gathered Data" -ForegroundColor Cyan  
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Filtering Gathered Data" -ForegroundColor Cyan  
 $FilteredSubs = $Subs | Select-Object -Property Name, ID, TenantId |
 Sort-Object Name
 
@@ -422,6 +422,7 @@ $VMSizes = $VMSizes |
 
 
 #region Export, Open CSVs in C:\temp
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Saving Data" -ForegroundColor Cyan 
 
 $NowStr = Get-Date -Format yyyy.MM.dd_HH.mm
 
@@ -451,7 +452,7 @@ $VMSizes | Export-Csv -Path "$($mdStr)\VMSizes.csv" -NoTypeInformation
 
 
 #region Build HTML Report, Export to C:\
-
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Building HTML Report" -ForegroundColor Cyan 
 $Report = @()
 $HTMLmessage = ""
 $HTMLMiddle = ""
@@ -524,7 +525,7 @@ $HTMLMiddle += GenericTable $VMSizes "VM Sizes by Location" "Detailed VM Sizes b
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">
-<html><head><title>My Systems Report</title>
+<html><head><title>Azure Report</title>
 <style type="text/css">
 <!--
 body {
@@ -612,14 +613,14 @@ $HTMLmessage | Out-File -Force ("$($mdStr)\RGInfo.html")
 
 
 #region Zip Results
-Write-Host "Creating ""$($mdStr).zip""" -ForegroundColor Cyan
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Creating Archive ""$($mdStr).zip""" -ForegroundColor Cyan
 Add-Type -assembly "system.io.compression.filesystem"
 [io.compression.zipfile]::CreateFromDirectory($mdStr, "$($mdStr).zip") | Out-Null
 
 #endregion
 
 #region Capture Time
-Write-Output "Done! Total Elapsed Time: $($elapsed.Elapsed.ToString())"
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Done! Total Elapsed Time: $($elapsed.Elapsed.ToString())" -ForegroundColor Cyan 
 $elapsed.Stop()
 #endregion
 

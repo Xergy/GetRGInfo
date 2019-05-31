@@ -216,3 +216,6 @@ $Mydisks
 # (($vm | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
 
 $Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
+
+
+$(Get-Date -Format yyyy.MM.dd_HH.mm.fff)
