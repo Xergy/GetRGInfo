@@ -344,7 +344,7 @@ foreach ($VM in $VMs) {
     $VMTagHash = [Ordered]@{
         Name = $VM.Name
         Subscription = $VM.Subscription
-        ResrouceGroupName = $VM.ResourceGroupName
+        ResourceGroupName = $VM.ResourceGroupName
     }
     
     foreach ($UniqueTag in $UniqueTags) {
