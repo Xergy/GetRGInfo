@@ -2,6 +2,9 @@ $Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
 
 $Mydisks
 
+$MyIMage = Get-AzureRmImage -ResourceGroupName Prod-RG
+
+$MyIMage 
 
 #$MyVM = $VMsStatus | Where-Object {$_.name -eq "f5deployment-f5instance0"}
 
@@ -138,7 +141,7 @@ $Mydisks
 
 
 
-#    $VMs =  Get-AzureRmVM -ResourceGroupName $RG.ResourceGroupName
+#    $VMs =  Get-Azu$MyIMagereRmVM -ResourceGroupName $RG.ResourceGroupName
 
 #    (($VMs[0] | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
 
@@ -219,3 +222,12 @@ $Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
 
 
 $(Get-Date -Format yyyy.MM.dd_HH.mm.fff)
+
+
+$Myid = "/subscriptions/301238dsf0sdfj/resourceGroups/rg-test/providers/Microsoft.Compute/virtualMachines/vmtest"
+
+Split-Path $Myid -Qualifier
+
+help Split-Path -ShowWindow
+
+$Myid | split-path -Leaf

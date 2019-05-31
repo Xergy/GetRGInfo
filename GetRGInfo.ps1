@@ -71,6 +71,7 @@ $KeyVaults = @()
 $RecoveryServicesVaults = @()
 $BackupItemSummary = @()
 $AVSets = @()
+$VMImages = @()
 
 # Pre-Processing Some Items:
 # VMSize Info
@@ -314,6 +315,22 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name AvailVMSizesA –Value $AvailVMSizesA -PassThru
     }
 
+    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) VM Images" -ForegroundColor Cyan   
+    $VMImages += Get-AzureRmImage -ResourceGroupName ($RG).ResourceGroupName |
+        Select-Object -Property *,
+        @{N='Subscription';E={($RG.Subscription)}}, @{N='SubscriptionId';E={($RG.SubscriptionID)}},
+        @{N='OSType';E={
+            $_.StorageProfile.OsDisk.OSType
+            } 
+        },
+        @{N='DiskSizeGB';E={
+            $_.StorageProfile.OsDisk.DiskSizeGB
+            } 
+        },
+        @{N='SourceVMShortName';E={
+            $_.SourceVirtualMachine.id | Split-Path -Leaf
+            } 
+        }
 }
 
 # Post-Process Tags
@@ -418,6 +435,10 @@ $VMSizes = $VMSizes |
     Select-Object -Property Name,Location,NumberOfCores,MemoryInGB |
     Sort-Object Location,Name,MemoryInGB,NumberOfCores
 
+$VMImages = $VMImages | 
+    Select-Object -Property Name,Subscription,Location,ResourceGroupName,OSType,DiskSizeGB,SourceVMShortName,Id |
+    Sort-Object Subscription,Location,ResourceGroupName,Name
+
 #endregion
 
 
@@ -447,6 +468,7 @@ $BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoType
 $AVSets | Export-Csv -Path "$($mdStr)\AVSets.csv" -NoTypeInformation
 $AVSetSizes | Export-Csv -Path "$($mdStr)\AVSetSizes.csv" -NoTypeInformation
 $VMSizes | Export-Csv -Path "$($mdStr)\VMSizes.csv" -NoTypeInformation
+$VMImages | Export-Csv -Path "$($mdStr)\VMImages.csv" -NoTypeInformation
 
 #endregion
 
@@ -521,6 +543,7 @@ $HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed B
 $HTMLMiddle += GenericTable $AVSets "Availability Sets Info" "Detailed AVSet Info"
 $HTMLMiddle += GenericTable $AVSetSizes "Availability Sets Available VM Sizes" "AVSet Available VM Sizes"
 $HTMLMiddle += GenericTable $VMSizes "VM Sizes by Location" "Detailed VM Sizes by Location"
+$HTMLMiddle += GenericTable $VMIMages "VM Images Info" "Detailed VM Image Info"
 
 # Assemble the HTML Header and CSS for our Report
 $HTMLHeader = @"
