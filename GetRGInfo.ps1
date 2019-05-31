@@ -157,6 +157,35 @@ foreach ( $RG in $RGs )
     Write-Host "Processing Info for $($RG.ResourceGroupName) Disks" -ForegroundColor Cyan 
     $Disks += $RG |
         Get-AzureRmDisk |
+        Select-Object -Property *,
+            @{N='ManagedByShortName';E={
+                If($_.ManagedBy){$_.ManagedBy.tostring().substring($_.ManagedBy.tostring().lastindexof('/')+1)}
+                }
+            },
+            @{N='SkuName';E={
+                $_.Sku.Name
+                }
+            },
+            @{N='SkuTier';E={
+                $_.Sku.Tier
+                }
+            },
+            @{N='CreationOption';E={
+                $_.CreationData.CreateOption
+                }
+            },
+            @{N='ImageReference';E={
+                If($_.CreationData.ImageReference.Id){$_.CreationData.ImageReference.Id}
+                }
+            },
+            @{N='SourceResourceId';E={
+                If($_.CreationData.SourceResourceId){$_.CreationData.SourceResourceId}
+                }
+            },
+            @{N='SourceUri';E={
+                If($_.CreationData.SourceUri){$_.CreationData.SourceUri}
+                }
+            } |
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
  
@@ -323,65 +352,67 @@ foreach ($VM in $VMs) {
 
 #region Filter and Sort Gathered Info
 Write-Host "Filtering Gathered Data" -ForegroundColor Cyan  
-$FilteredSubs = $Subs | Select-Object -Property Name, ID, TenantId
+$FilteredSubs = $Subs | Select-Object -Property Name, ID, TenantId |
+Sort-Object Name
 
-$FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location
+$FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,SubscriptionId,Location |
+    Sort-Object Subscription,Location,ResourceGroupName
 
 $VMs = $VMs | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,PowerState,OSType,Size,NumberOfCores,MemoryInGB,LicenseType,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $Tags = $Tags | Sort-Object Subscription,ResourceGroupName,Name
 
 $StorageAccounts = $StorageAccounts  | 
     Select-Object -Property StorageAccountName,Subscription,ResourceGroupName,Location |
-    Sort-Object Subscription,ResourceGroupName,StorageAccountName
+    Sort-Object Subscription,Location,ResourceGroupName,StorageAccountName
 
 $Disks = $Disks | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,OsType,DiskSizeGB |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Select-Object -Property Name,ManagedByShortName,Subscription,Location,ResourceGroupName,OsType,DiskSizeGB,TimeCreated,SkuName,SkuTier,CreationOption,ImageReference,SourceResourceId,SourceUri |
+    Sort-Object Subscription,Location,ResourceGroupName,Name,ManagedByShortName
 
 $Vnets =  $Vnets | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $NetworkInterfaces =  $NetworkInterfaces | 
     Select-Object -Property Subscription,ResourceGroupName,Owner,Name,Location,Primary,PrivateIp,PrivateIPs,DnsServers,NSG |
-    Sort-Object Subscription,ResourceGroupName,Owner,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Owner,Name
 
 $NSGs = $NSGs | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,NetworkInterfaceName,SubnetName,SecurityRuleName |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $AutoAccounts = $AutoAccounts | 
     Select-Object -Property AutomationAccountName,Subscription,ResourceGroupName,Location |
-    Sort-Object Subscription,ResourceGroupName,AutomationAccountName
+    Sort-Object Subscription,Location,ResourceGroupName,AutomationAccountName
 
 $LogAnalystics = $LogAnalystics  | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $KeyVaults = $KeyVaults | 
     Select-Object -Property VaultName,Subscription,ResourceGroupName,Location |
-    Sort-Object Subscription,ResourceGroupName,VaultName
+    Sort-Object Subscription,Location,ResourceGroupName,VaultName
 
 $RecoveryServicesVaults = $RecoveryServicesVaults |
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,BackupAlertEmails  |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $BackupItemSummary = $BackupItemSummary |
     Select-Object -Property FriendlyName,RecoveryServicesVault,ProtectionStatus,ProtectionState,LastBackupStatus,LastBackupTime,ProtectionPolicyName,LatestRecoveryPoint,ContainerName,ContainerType |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $AVsetsAll = $AVSets
 
 $AVSets = $AVsetsAll | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,PlatformFaultDomainCount,PlatformUpdateDomainCount |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $AVSetSizes = $AVsetsAll | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,AvailVMSizesA,AvailVMSizesD,AvailVMSizesDv2,AvailVMSizesDv3,AvailVMSizesF |
-    Sort-Object Subscription,ResourceGroupName,Name
+    Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $VMSizes = $VMSizes | 
     Select-Object -Property Name,Location,NumberOfCores,MemoryInGB |

@@ -1,9 +1,13 @@
+$Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
+
+$Mydisks
+
 
 #$MyVM = $VMsStatus | Where-Object {$_.name -eq "f5deployment-f5instance0"}
 
-$MyVM = get-azurermvm -ResourceGroupName Prod-RG -Name VMResizeTest05 -status
+# $MyVM = get-azurermvm -ResourceGroupName Prod-RG -Name VMResizeTest05 -status
 
-$MyVM
+# $MyVM
 
 # # $MyVault = Get-AzureRmRecoveryServicesVault -ResourceGroupName "Prod-RG"
 
@@ -209,4 +213,6 @@ $MyVM
 #     Add-Member -MemberType NoteProperty –Name UpdateDomain –Value ($VMStatus.PlatformUpdateDomain) -PassThru | 
 
 
-(($vm | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
+# (($vm | Get-AzureRmVM -Status).statuses)[1].code.split("/")[1]
+
+$Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
