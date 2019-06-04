@@ -231,3 +231,31 @@ Split-Path $Myid -Qualifier
 help Split-Path -ShowWindow
 
 $Myid | split-path -Leaf
+
+
+$_.NetworkSecurityGroup.id.tostring().substring($_.NetworkSecurityGroup.id.tostring().lastindexof('/')+1)
+
+VNetSub,VNetRG,VNet,Subnet
+
+VNetSub
+$_.IpConfigurations[0].Subnet.Id.tostring().split('/')[2]
+VNetRG
+$_.IpConfigurations[0].Subnet.Id.tostring().split('/')[4]
+VNet
+$_.IpConfigurations[0].Subnet.Id.tostring().split('/')[8]
+Subnet
+$_.IpConfigurations[0].Subnet.Id.tostring().split('/')[10]
+
+MacAddress
+$_.MacAddress
+
+
+$NetworkInterfaces | Select-Object -Unique -Property VNetSub,VNetRG,VNet
+
+$NetworkInterfaces | Select-Object -Unique -Property VNetSub,VNetRG,VNet
+
+$MyVnets = Get-AzureRmVirtualNetwork
+
+$MyVnets[0].subnets
+
+get-help Get-AzureRmVirtualNetwork -ShowWindow

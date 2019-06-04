@@ -203,6 +203,22 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru |
         ForEach-Object { $_ | Add-Member -MemberType NoteProperty –Name PrivateIp –Value ($_.IpConfigurations[0].PrivateIpAddress) -PassThru} |
         Select-Object *,
+            @{N='VNetSub';E={
+                $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[2]
+                }
+            },
+            @{N='VNetRG';E={
+                $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[4]
+                }
+            },
+            @{N='VNet';E={
+                $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[8]
+                }
+            },
+            @{N='Subnet';E={
+                $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[10]
+                }
+            },
             @{N='NSG';E={
                 $_.NetworkSecurityGroup.id.tostring().substring($_.NetworkSecurityGroup.id.tostring().lastindexof('/')+1)
                 }
@@ -394,7 +410,7 @@ $Vnets =  $Vnets |
     Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $NetworkInterfaces =  $NetworkInterfaces | 
-    Select-Object -Property Subscription,ResourceGroupName,Owner,Name,Location,Primary,PrivateIp,PrivateIPs,DnsServers,NSG |
+    Select-Object -Property Subscription,ResourceGroupName,Owner,Name,Location,VNetSub,VNetRG,VNet,Subnet,Primary,MacAddress,PrivateIp,PrivateIPs,DnsServers,NSG |
     Sort-Object Subscription,Location,ResourceGroupName,Owner,Name
 
 $NSGs = $NSGs | 
