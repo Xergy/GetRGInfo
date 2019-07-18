@@ -1,3 +1,7 @@
+$Subnets = $Vnets.subnets
+
+$Subnets 
+
 $Mydisks = get-azurermdisk -ResourceGroupName Prod-RG
 
 $Mydisks
@@ -235,18 +239,18 @@ $Myid | split-path -Leaf
 
 $_.NetworkSecurityGroup.id.tostring().substring($_.NetworkSecurityGroup.id.tostring().lastindexof('/')+1)
 
-VNetSub,VNetRG,VNet,Subnet
+# VNetSub,VNetRG,VNet,Subnet
 
-VNetSub
+# VNetSub
 $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[2]
-VNetRG
+# VNetRG
 $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[4]
-VNet
+# VNet
 $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[8]
-Subnet
+# Subnet
 $_.IpConfigurations[0].Subnet.Id.tostring().split('/')[10]
 
-MacAddress
+# MacAddress
 $_.MacAddress
 
 
@@ -256,6 +260,20 @@ $NetworkInterfaces | Select-Object -Unique -Property VNetSub,VNetRG,VNet
 
 $MyVnets = Get-AzureRmVirtualNetwork
 
-$MyVnets[0].subnets
+$MyVnets[0].subnets.AddressPrefix | gm
 
-get-help Get-AzureRmVirtualNetwork -ShowWindow
+get-help Get-AzureRmVirtualNetwork -Full
+
+$NetworkInterfaces | 
+    Select-Object -Unique -Property VNetSub,VNetRG,VNet | 
+    Select-Object -Property @{N='Name';E={$_.VNet}},@{N='ResourceGroupName';E={$_.VNetRG}} | 
+    Get-AzureRmVirtualNetwork
+
+
+$Vnets.subnets[0] | gm
+
+$_.AddressPrefix[0] | gm
+
+$MyVnets.subnets[0].AddressPrefix[0] 
+
+$MyVnets.Name

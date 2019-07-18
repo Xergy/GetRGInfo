@@ -190,11 +190,11 @@ foreach ( $RG in $RGs )
         Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
         Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
  
-    Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Vnets" -ForegroundColor Cyan        
-    $Vnets +=  $RG | 
-        Get-AzureRmVirtualNetwork |
-        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
-        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
+    # Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Vnets" -ForegroundColor Cyan        
+    # $Vnets +=  $RG | 
+    #     Get-AzureRmVirtualNetwork |
+    #     Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+    #     Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
 
     Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) NetworkInterfaces" -ForegroundColor Cyan 
     $NetworkInterfaces +=  $RG |
@@ -379,6 +379,36 @@ foreach ($VM in $VMs) {
 #$TagsProps = "Subscription","ResourceGroupName","Name" 
 #$TagsProps += $UniqueTags
 
+#Get Vnets when we might not have access to the Sub and RG of the Vnet
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) Hidden Vnets and Subnets" -ForegroundColor Cyan        
+
+If (!$Vnets ) {
+    $Vnets = $NetworkInterfaces | 
+        Select-Object -Unique -Property VNetSub,VNetRG,VNet | 
+        Select-Object -Property @{N='Name';E={$_.VNet}},@{N='ResourceGroupName';E={$_.VNetRG}} | 
+        Get-AzureRmVirtualNetwork |
+        Add-Member -MemberType NoteProperty –Name Subscription –Value $RG.Subscription -PassThru |
+        Add-Member -MemberType NoteProperty –Name SubscriptionId –Value $RG.SubscriptionID -PassThru 
+        
+    $Subnets = $Vnets |
+        ForEach-Object {
+            $VNetSub = $_.Subscription
+            $VNetSubID = $_.SubscriptionID
+            $VNetRG = $_.ResourceGroupName
+            $VNetLocation = $_.Location
+            $VNetName = $_.Name
+                        
+            $_.Subnets |
+                Select-Object *, 
+                    @{N='Subscription';E={$VNetSub}},
+                    @{N='SubscriptionID ';E={$VNetSubID}},
+                    @{N='ResourceGroupName';E={$VNetRG}},
+                    @{N='Location';E={$VNetLocation}},
+                    @{N='VNet';E={$VNetName}},
+                    @{N='AddressPrefixText';E={$_.AddressPrefix[0]}}
+        }
+
+}
 
 #endregion
 
@@ -406,15 +436,19 @@ $Disks = $Disks |
     Sort-Object Subscription,Location,ResourceGroupName,Name,ManagedByShortName
 
 $Vnets =  $Vnets | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location |
+    Select-Object -Property Subscription,Location,ResourceGroupName,Name |
     Sort-Object Subscription,Location,ResourceGroupName,Name
 
+$Subnets =  $Subnets | 
+    Select-Object -Property Subscription,Location,ResourceGroupName,VNet,Name,AddressPrefixText |
+    Sort-Object Subscription,Location,ResourceGroupName,VNet,Name
+
 $NetworkInterfaces =  $NetworkInterfaces | 
-    Select-Object -Property Subscription,ResourceGroupName,Owner,Name,Location,VNetSub,VNetRG,VNet,Subnet,Primary,MacAddress,PrivateIp,PrivateIPs,DnsServers,NSG |
+    Select-Object -Property Subscription,Location,ResourceGroupName,Owner,Name,VNetSub,VNetRG,VNet,Subnet,Primary,NSG,MacAddress,DnsServers,PrivateIp,PrivateIPs |
     Sort-Object Subscription,Location,ResourceGroupName,Owner,Name
 
 $NSGs = $NSGs | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,NetworkInterfaceName,SubnetName,SecurityRuleName |
+    Select-Object -Property Subscription,Location,ResourceGroupName,Name,NetworkInterfaceName,SubnetName,SecurityRuleName |
     Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $AutoAccounts = $AutoAccounts | 
@@ -474,6 +508,7 @@ $Tags | Export-Csv -Path "$($mdStr)\Tags.csv" -NoTypeInformation
 $StorageAccounts | Export-Csv -Path "$($mdStr)\StorageAccounts.csv" -NoTypeInformation
 $Disks | Export-Csv -Path "$($mdStr)\Disks.csv" -NoTypeInformation
 $Vnets | Export-Csv -Path "$($mdStr)\Vnets.csv" -NoTypeInformation
+$Subnets | Export-Csv -Path "$($mdStr)\Subnets.csv" -NoTypeInformation
 $NetworkInterfaces | Export-Csv -Path "$($mdStr)\NetworkInterfaces.csv" -NoTypeInformation
 $NSGs  | Export-Csv -Path "$($mdStr)\NSGs.csv" -NoTypeInformation
 $AutoAccounts | Export-Csv -Path "$($mdStr)\AutoAccounts.csv" -NoTypeInformation
