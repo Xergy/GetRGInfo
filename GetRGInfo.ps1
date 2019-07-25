@@ -59,6 +59,7 @@ $RGs = Import-Csv -Path "config.csv"
 $VMsStatus = @()
 $VMs = @()
 $Tags = @()
+$TagsAVSet = @()
 $UniqueTags = @()
 $StorageAccounts = @()
 $Disks = @() 
@@ -349,11 +350,10 @@ foreach ( $RG in $RGs )
         }
 }
 
-# Post-Process Tags
+# Post-Process VM Tags
 
 Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for All Tags" -ForegroundColor Cyan  
 [System.Collections.ArrayList]$Tags = @()
-#$UniqueTags = $VMs.Tags | Select-Object -ExpandProperty keys| ForEach-Object { ([String]$_).ToUpper() } | Select-Object -Unique | Sort-Object
 $UniqueTags = $VMs.Tags.Keys.ToUpper() | Select-Object -Unique | Sort-Object
 
 foreach ($VM in $VMs) {
@@ -375,6 +375,33 @@ foreach ($VM in $VMs) {
     $VMTag = [PSCustomObject]$VMTagHash
     [Void]$Tags.Add($VMTag)
 }
+
+# Post-Process AVSet Tags
+
+Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for All AV Set Tags " -ForegroundColor Cyan  
+[System.Collections.ArrayList]$TagsAVSet = @()
+$UniqueTags = $AVSets.Tags.Keys.ToUpper() | Select-Object -Unique | Sort-Object
+
+foreach ($AVSet in $AVSets) {
+    $AVSetTagHash = [Ordered]@{
+        Name = $AVSet.Name
+        Subscription = $AVSet.Subscription
+        ResourceGroupName = $AVSet.ResourceGroupName
+    }
+    
+    foreach ($UniqueTag in $UniqueTags) {
+        $TagValue = $Null
+        if ($AVSet.Tags.Keys -contains $UniqueTag) {
+            $TagName = $AVSet.Tags.Keys.Where{$_ -eq $UniqueTag}
+            $TagValue = $AVSet.Tags[$TagName]
+        }
+
+        $AVSetTagHash.$UniqueTag = $TagValue
+    }
+    $AVSetTag = [PSCustomObject]$AVSetTagHash
+    [Void]$TagsAVSet.Add($AVSetTag)
+}
+
 
 #$TagsProps = "Subscription","ResourceGroupName","Name" 
 #$TagsProps += $UniqueTags
@@ -477,6 +504,8 @@ $AVSets = $AVsetsAll |
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,PlatformFaultDomainCount,PlatformUpdateDomainCount |
     Sort-Object Subscription,Location,ResourceGroupName,Name
 
+$TagsAVSet = $TagsAVSet | Sort-Object Subscription,ResourceGroupName,Name
+
 $AVSetSizes = $AVsetsAll | 
     Select-Object -Property Name,Subscription,ResourceGroupName,Location,AvailVMSizesA,AvailVMSizesD,AvailVMSizesDv2,AvailVMSizesDv3,AvailVMSizesF |
     Sort-Object Subscription,Location,ResourceGroupName,Name
@@ -517,6 +546,7 @@ $KeyVaults | Export-Csv -Path "$($mdStr)\KeyVaults.csv" -NoTypeInformation
 $RecoveryServicesVaults | Export-Csv -Path "$($mdStr)\RecoveryServicesVaults.csv" -NoTypeInformation
 $BackupItemSummary  | Export-Csv -Path "$($mdStr)\BackupItemSummary.csv" -NoTypeInformation
 $AVSets | Export-Csv -Path "$($mdStr)\AVSets.csv" -NoTypeInformation
+$TagsAVSet | Export-Csv -Path "$($mdStr)\TagsAVSet.csv" -NoTypeInformation 
 $AVSetSizes | Export-Csv -Path "$($mdStr)\AVSetSizes.csv" -NoTypeInformation
 $VMSizes | Export-Csv -Path "$($mdStr)\VMSizes.csv" -NoTypeInformation
 $VMImages | Export-Csv -Path "$($mdStr)\VMImages.csv" -NoTypeInformation
@@ -593,6 +623,7 @@ $HTMLMiddle += GenericTable $KeyVaults "Key Vaults" "Detailed Key Vault Info"
 $HTMLMiddle += GenericTable $RecoveryServicesVaults "Recovery Services Vaults" "Detailed Vault Info"
 $HTMLMiddle += GenericTable $BackupItemSummary "Backup Item Summary" "Detailed Backup Item Summary Info"
 $HTMLMiddle += GenericTable $AVSets "Availability Sets Info" "Detailed AVSet Info"
+$HTMLMiddle += GenericTable $TagsAVSet "Availability Set Tags" "Availability Sets Tag Info"
 $HTMLMiddle += GenericTable $AVSetSizes "Availability Sets Available VM Sizes" "AVSet Available VM Sizes"
 $HTMLMiddle += GenericTable $VMSizes "VM Sizes by Location" "Detailed VM Sizes by Location"
 $HTMLMiddle += GenericTable $VMIMages "VM Images Info" "Detailed VM Image Info"
