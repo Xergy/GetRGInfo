@@ -1,3 +1,5 @@
+try { Get-AzureRmContext
+
 $Subnets = $Vnets.subnets
 
 $Subnets 
@@ -277,3 +279,10 @@ $_.AddressPrefix[0] | gm
 $MyVnets.subnets[0].AddressPrefix[0] 
 
 $MyVnets.Name
+
+try { 
+    Get-AzureRmContext
+    } 
+catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{ 
+    WriteHost "Fix me"
+    } 

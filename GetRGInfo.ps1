@@ -148,8 +148,25 @@ foreach ( $RG in $RGs )
                         $VMSize.MemoryInGB
                     }
                 }  
-        }
-          
+        } |
+        Select-Object *,
+            @{N='OsDiskName';E={
+                    $_.StorageProfile.OsDisk.Name
+                }
+            },
+            @{N='OsDiskCaching';E={
+                    $_.StorageProfile.OsDisk.Caching
+                }
+            },
+            @{N='DataDiskName';E={
+                    ($_.StorageProfile.DataDisks.Name ) -join " "
+                }
+            }, 
+            @{N='DataDiskCaching';E={
+                    ($_.StorageProfile.DataDisks.Caching ) -join " "
+                }
+            } 
+
     Write-Host "$(Get-Date -Format yyyy.MM.dd_HH.mm.fff) Processing Info for $($RG.ResourceGroupName) StorageAccounts" -ForegroundColor Cyan    
     $StorageAccounts += $RG | 
         get-AzureRmStorageAccount |
@@ -449,7 +466,7 @@ $FilteredRGs = $RGs  | Select-Object -Property ResourceGroupName,Subscription,Su
     Sort-Object Subscription,Location,ResourceGroupName
 
 $VMs = $VMs | 
-    Select-Object -Property Name,Subscription,ResourceGroupName,Location,PowerState,OSType,Size,NumberOfCores,MemoryInGB,LicenseType,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
+    Select-Object -Property Name,Subscription,ResourceGroupName,Location,PowerState,OSType,LicenseType,Size,NumberOfCores,MemoryInGB,OsDiskName,OsDiskCaching,DataDiskName,DataDiskCaching,NicCount,NicCountCap,AvailabilitySet,FaultDomain,UpdateDomain |
     Sort-Object Subscription,Location,ResourceGroupName,Name
 
 $Tags = $Tags | Sort-Object Subscription,ResourceGroupName,Name
